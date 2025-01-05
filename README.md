@@ -13,14 +13,6 @@ A lightweight and fast CLI utility for searching files, implemented in Go.
 
 ## Usage
 
-### Build the Tool
-
-To build the CLI:
-
-```bash
-go build -o gofs cmd/gofs.go
-```
-
 ### Run Commands
 
 Display Help:
@@ -33,16 +25,15 @@ Display Help:
 Output:
 
 ```bash
-Usage: gofs [options] <directory> <filename>
+Usage: gofs [options] <pattern> [pathname]
 
 Options:
   -h, --help       Show help message
   -v, --version    Show version of the utility
-  --dir            Directory to search (default: current directory)
 
 Positional Arguments:
-  <directory>      Directory to search (overrides --dir)
-  <filename>       Pattern to search for (required)
+  <pattern>       Pattern to search for (required)
+  [pathname]      Directory to search (optional)
 ```
 
 Display Version:
@@ -55,50 +46,77 @@ Display Version:
 Output:
 
 ```bash
-gofs version 1.0.0
-```
-
-Search for files:
-
-- Search for a file in the current directory:
-
-```bash
-./gofs example.txt
-```
-
-- Search for a file in a specific directory:
-
-```bash
-./gofs testdata example.txt
-```
-
-## Development
-
-### Run Tests
-
-To run the test suite:
-
-```bash
-go test ./... -v
+gofs version <version-number>
 ```
 
 ### Directory Structure
 
 ```bash
-gofs/
-├── cmd/                     # CLI entry point
-│   └── gofs.go
-├── internal/                # Internal modules
-│   └── search/              # File search logic
-│       └── search.go
-├── tests/                   # Unit tests
-│   └── search_test.go
-├── testdata/                # Sample test data
-│   ├── example.txt
-│   ├── dir1/
-│   └── emptydir/
-├── README.md                # Project documentation
-└── go.mod                   # Go module file
+root/
+├── dir1/
+│   └── config.txt
+├── dir2/
+│   └── nested-dir/
+│       └── data.json
+├── unit-tests.go
+├── testdata/
+    ├── example.txt
+    └── emptydir/
+```
+
+### Search
+
+Search for files:
+
+List all files and directories in the current directory:
+
+```bash
+gofs
+```
+
+Output
+
+```yaml
+dir1
+dir2
+testdata
+unit-test.go
+```
+
+Search for a file in the current directory:
+
+```bash
+gofs config.txt
+```
+
+Output
+
+```yaml
+root/dir1/config.txt
+```
+
+Search for all files in a specified directory
+
+```bash
+gofs . root/dir1/
+```
+
+Output
+
+```yaml
+dir1/config.txt
+```
+
+Search for a file in a specified directory
+
+```bash
+gofs data.json dir2/
+```
+
+Output
+
+```yaml
+dir2/nested-dir/data.json
 ```
 
 ## License

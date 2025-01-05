@@ -12,9 +12,9 @@ const version = "1.0.0"
 func main() {
 	help := flag.Bool("h", false, "Show help message")
 	versionFlag := flag.Bool("v", false, "Show the version of the utility")
-	dir := flag.String("dir", ".", "Directory to search (default: current directory)")
+	path := flag.String("path", ".", "Pathname to search (default: current directory)")
 
-	// Handle long flags manually for now - Implement cobra later
+	// Handle long flags manually for now - Implement COBRA later
 	for i, arg := range os.Args {
 		if arg == "--help" {
 			os.Args[i] = "-h"
@@ -26,14 +26,13 @@ func main() {
 
 	// Override the default usage function
 	flag.Usage = func() {
-		fmt.Println("Usage: gofs [options] <directory> <filename>")
+		fmt.Println("Usage: gofs [options] <pattern> [pathname]")
 		fmt.Println("\nOptions:")
 		fmt.Println("  -h, --help       Show help message")
 		fmt.Println("  -v, --version    Show version of the utility")
-		fmt.Println("  --dir            Directory to search (default: current directory)")
 		fmt.Println("\nPositional Arguments:")
-		fmt.Println("  <directory>      Directory to search (overrides --dir)")
-		fmt.Println("  <filename>       Pattern to search for (required)")
+		fmt.Println("  <pattern>       Pattern to search for (required)")
+		fmt.Println("  [pathname]      Pathname to search (optional)")
 	}
 
 	flag.Parse()
@@ -50,21 +49,33 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Handle no arguments
+	// Handle no arguments: List all files and directories
 	args := flag.Args()
 	if len(args) == 0 {
-		fmt.Println("Error: <filename> is required.")
-		flag.Usage()
-		os.Exit(1)
+		results, err := search.Traverse(*path, true)
+		if err != nil {
+			fmt.Printf("Error listing files: %v\n", err)
+			os.Exit(1)
+		}
+
+		if len(results) == 0 {
+			fmt.Println("No files found.")
+		} else {
+			fmt.Println("Files and directories:")
+			for _, result := range results {
+				fmt.Println(result)
+			}
+		}
+		os.Exit(0)
 	}
 
 	// Extract directory and filename
-	filename := args[len(args)-1] // last arg is the filename
+	pattern := args[0] // First argument is always the filename
 	if len(args) > 1 {
-		*dir = args[len(args)-2] // last second arg is the directory
+		*path = args[1] // Second argument, if provided, overrides --dir
 	}
 
-	results, err := search.Search(*dir, filename)
+	results, err := search.Search(pattern, *path)
 	if err != nil {
 		fmt.Printf("Search failed: %v\n", err)
 		os.Exit(1)
