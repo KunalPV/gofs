@@ -84,7 +84,7 @@ go test ./... -v
 
 ### Directory Structure
 
-```
+```bash
 gofs/
 ├── cmd/                     # CLI entry point
 │   └── gofs.go
