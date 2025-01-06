@@ -12,11 +12,10 @@ const version = "1.0.0"
 
 // Root command for the CLI
 var rootCmd = &cobra.Command{
-	Use:   "gofs [options] <pattern> [pathname]",
+	Use:   "gofs [Flag] <pattern> [pathname]",
 	Short: "gofs is a lightweight CLI tool for searching files.",
-	Long: `gofs is a fast and lightweight CLI tool implemented in Go for searching files 
-in directories. It supports pattern matching, directory traversal, and more.`,
-	Args: cobra.MaximumNArgs(2), // Allow 0, 1, or 2 arguments
+	Long:  `A program to find files and directories in your filesystem`,
+	Args:  cobra.MinimumNArgs(1), // Require at least 1 argument (pattern)
 	Run: func(cmd *cobra.Command, args []string) {
 		// Handle --version flag
 		versionFlag, _ := cmd.Flags().GetBool("version")
@@ -25,10 +24,13 @@ in directories. It supports pattern matching, directory traversal, and more.`,
 			os.Exit(0)
 		}
 
-		// Handle no arguments: List top-level files and directories
-		if len(args) == 0 {
-			path, _ := cmd.Flags().GetString("path")
-			results, err := search.Traverse(path, true) // Top-level listing only
+		// Get depth flag
+		depth, _ := cmd.Flags().GetInt("depth")
+
+		// Handle `gofs .`: List all files and directories recursively
+		if len(args) == 1 && args[0] == "." {
+			path, _ := cmd.Flags().GetString("pathname")
+			results, err := search.Traverse(path, depth)
 			if err != nil {
 				fmt.Printf("Error listing files: %v\n", err)
 				return
@@ -44,19 +46,57 @@ in directories. It supports pattern matching, directory traversal, and more.`,
 			return
 		}
 
-		// Handle arguments for searching
+		// Extract pattern and optional pathname
 		pattern := args[0]
 		path := "."
 		if len(args) == 2 {
 			path = args[1]
 		}
 
-		results, err := search.Search(pattern, path)
+		// Check for flags
+		regexFlag, _ := cmd.Flags().GetBool("regex")
+		globFlag, _ := cmd.Flags().GetBool("glob")
+		var results []string
+		var err error
+
+		if globFlag {
+			// Perform glob search
+			allFiles, err := search.Traverse(path, depth) // Get all files recursively
+			if err != nil {
+				fmt.Printf("Error traversing files: %v\n", err)
+				return
+			}
+
+			results, err = search.GlobFilter(allFiles, pattern) // Filter using glob
+			if err != nil {
+				fmt.Printf("Error filtering files: %v\n", err)
+				return
+			}
+		} else if regexFlag {
+			// Perform regex search
+			allFiles, err := search.Traverse(path, depth) // Get all files recursively
+			if err != nil {
+				fmt.Printf("Error traversing files: %v\n", err)
+				return
+			}
+
+			results, err = search.RegexFilter(allFiles, pattern) // Filter using regex
+			if err != nil {
+				fmt.Printf("Error filtering files: %v\n", err)
+				return
+			}
+		} else {
+			// Perform normal substring search
+			results, err = search.Search(pattern, path, depth)
+		}
+
+		// Handle errors
 		if err != nil {
 			fmt.Printf("Search failed: %v\n", err)
 			return
 		}
 
+		// Output results
 		if len(results) == 0 {
 			fmt.Println("No files found.")
 		} else {
@@ -76,6 +116,16 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringP("path", "p", ".", "Pathname to search (default: current directory)")
+	rootCmd.PersistentFlags().StringP("pathname", "p", ".", "Pathname to search (default: current directory)")
 	rootCmd.Flags().BoolP("version", "v", false, "Display the version of the utility")
+	rootCmd.Flags().BoolP("regex", "r", false, "Use regex pattern for searching")
+	rootCmd.Flags().BoolP("glob", "g", false, "Use glob pattern for searching")
+	rootCmd.Flags().IntP("depth", "d", -1, "Limit the depth of directory traversal (-1 for unlimited depth)")
+
+	rootCmd.SetUsageTemplate(`Usage:
+  gofs [Flag] <pattern> [pathname]
+
+Flags:
+{{.Flags.FlagUsages | trimTrailingWhitespaces}}
+	`)
 }

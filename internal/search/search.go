@@ -5,12 +5,23 @@ import (
 	"strings"
 )
 
-// function to traverse the directory and files matching the pattern
-func Search(pattern, path string) ([]string, error) {
+// Search finds files matching a pattern (glob, regex, or substring) in the specified directory.
+func Search(pattern, path string, depth int) ([]string, error) {
 	// Get all files from the directory
-	files, err := Traverse(path, false)
+	files, err := Traverse(path, depth)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if the pattern is a glob (contains wildcard characters like `*` or `?`)
+	if strings.ContainsAny(pattern, "*?[]") {
+		return GlobFilter(files, pattern)
+	}
+
+	// Check if the pattern is a regex (starts with "re:")
+	if strings.HasPrefix(pattern, "re:") {
+		regexPattern := strings.TrimPrefix(pattern, "re:")
+		return RegexFilter(files, regexPattern)
 	}
 
 	// Filter files by the pattern
