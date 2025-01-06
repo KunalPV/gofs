@@ -6,15 +6,16 @@ import (
 	"testing"
 )
 
-func TestFileSearchByName(t *testing.T) {
-	cmd := exec.Command("go", "run", "main.go", "README.md")
+func TestSearchInSpecificDirectory(t *testing.T) {
+	cmd := exec.Command("go", "run", "main.go", "search.go", "internal/search")
 	cmd.Dir = "../"
 	output, err := cmd.CombinedOutput()
+
 	if err != nil {
-		t.Fatalf("Error running file search by name: %v", err)
+		t.Fatalf("Error running search in specific directory: %v", err)
 	}
 
-	expectedOutput := "README.md"
+	expectedOutput := "search.go"
 	if !strings.Contains(string(output), expectedOutput) {
 		t.Errorf("Expected file '%s' not found in output. Got: %s", expectedOutput, output)
 	}
