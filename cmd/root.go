@@ -15,7 +15,17 @@ var rootCmd = &cobra.Command{
 	Use:   "gofs [Flag] <pattern> [pathname]",
 	Short: "gofs is a lightweight CLI tool for searching files.",
 	Long:  `A program to find files and directories in your filesystem`,
-	Args:  cobra.MinimumNArgs(1), // Require at least 1 argument (pattern)
+	Args: func(cmd *cobra.Command, args []string) error {
+		// Check if --version or --help flags are set
+		versionFlag, _ := cmd.Flags().GetBool("version")
+		if versionFlag {
+			return nil // Allow zero arguments if --version is set
+		}
+		if len(args) < 1 {
+			return fmt.Errorf("requires at least 1 arg(s), only received 0")
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		// Handle --version flag
 		versionFlag, _ := cmd.Flags().GetBool("version")
@@ -24,8 +34,45 @@ var rootCmd = &cobra.Command{
 			os.Exit(0)
 		}
 
-		// Get depth flag
+		// Get flags
 		depth, _ := cmd.Flags().GetInt("depth")
+		regexFlag, _ := cmd.Flags().GetBool("regex")
+		globFlag, _ := cmd.Flags().GetBool("glob")
+		excludePatterns, _ := cmd.Flags().GetStringSlice("exclude")
+		fileType, _ := cmd.Flags().GetBool("filetype")
+		extension, _ := cmd.Flags().GetBool("extension")
+		caseSensitive, _ := cmd.Flags().GetBool("casesensitive")
+
+		// Check conflicting flags
+		if regexFlag && globFlag {
+			fmt.Println("Error: --regex and --glob cannot be used together.")
+			os.Exit(1)
+		}
+		if fileType && extension {
+			fmt.Println("Error: --filetype and --extension cannot be used together.")
+			os.Exit(1)
+		}
+		if (regexFlag || globFlag) && caseSensitive {
+			fmt.Println("Error: --casesensitive cannot be used with --regex or --glob.")
+			os.Exit(1)
+		}
+		if (regexFlag || globFlag) && fileType {
+			fmt.Println("Error: --filetype cannot be used with --regex or --glob.")
+			os.Exit(1)
+		}
+		if (regexFlag || globFlag) && extension {
+			fmt.Println("Error: --extension cannot be used with --regex or --glob.")
+			os.Exit(1)
+		}
+
+		options := search.FilterOptions{
+			RegexPattern:    regexFlag,
+			GlobPattern:     globFlag,
+			CaseSensitive:   caseSensitive,
+			ExcludePatterns: excludePatterns,
+			FileType:        fileType,
+			Extension:       extension,
+		}
 
 		// Handle `gofs .`: List all files and directories recursively
 		if len(args) == 1 && args[0] == "." {
@@ -53,42 +100,7 @@ var rootCmd = &cobra.Command{
 			path = args[1]
 		}
 
-		// Check for flags
-		regexFlag, _ := cmd.Flags().GetBool("regex")
-		globFlag, _ := cmd.Flags().GetBool("glob")
-		var results []string
-		var err error
-
-		if globFlag {
-			// Perform glob search
-			allFiles, err := search.Traverse(path, depth) // Get all files recursively
-			if err != nil {
-				fmt.Printf("Error traversing files: %v\n", err)
-				return
-			}
-
-			results, err = search.GlobFilter(allFiles, pattern) // Filter using glob
-			if err != nil {
-				fmt.Printf("Error filtering files: %v\n", err)
-				return
-			}
-		} else if regexFlag {
-			// Perform regex search
-			allFiles, err := search.Traverse(path, depth) // Get all files recursively
-			if err != nil {
-				fmt.Printf("Error traversing files: %v\n", err)
-				return
-			}
-
-			results, err = search.RegexFilter(allFiles, pattern) // Filter using regex
-			if err != nil {
-				fmt.Printf("Error filtering files: %v\n", err)
-				return
-			}
-		} else {
-			// Perform normal substring search
-			results, err = search.Search(pattern, path, depth)
-		}
+		results, err := search.Search(pattern, path, depth, options)
 
 		// Handle errors
 		if err != nil {
@@ -121,6 +133,10 @@ func init() {
 	rootCmd.Flags().BoolP("regex", "r", false, "Use regex pattern for searching")
 	rootCmd.Flags().BoolP("glob", "g", false, "Use glob pattern for searching")
 	rootCmd.Flags().IntP("depth", "d", -1, "Limit the depth of directory traversal (-1 for unlimited depth)")
+	rootCmd.Flags().StringSliceP("exclude", "x", []string{}, "Exclude files or directories matching a glob pattern")
+	rootCmd.Flags().BoolP("filetype", "t", false, "Filter results by file type (e.g., file, dir, symlink)")
+	rootCmd.Flags().BoolP("extension", "e", false, "Filter results by file extension")
+	rootCmd.Flags().BoolP("casesensitive", "S", false, "Enable case-sensitive search")
 
 	rootCmd.SetUsageTemplate(`Usage:
   gofs [Flag] <pattern> [pathname]
