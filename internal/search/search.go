@@ -2,6 +2,7 @@ package search
 
 import (
 	"fmt"
+	"gofs/utils"
 	"path/filepath"
 	"strings"
 )
@@ -13,6 +14,7 @@ type FilterOptions struct {
 	ExcludePatterns []string
 	FileType        bool
 	Extension       bool
+	AbsPath         bool
 }
 
 // Search finds files matching a pattern (glob, regex, or substring) in the specified directory.
@@ -33,6 +35,14 @@ func Search(pattern, path string, depth int, options FilterOptions) ([]string, e
 	finalFiles, err := ExcludePattern(filteredFiles, options.ExcludePatterns)
 	if err != nil {
 		return nil, fmt.Errorf("error excluding files: %v", err)
+	}
+
+	// Convert to absolute paths if the AbsPath option is enabled
+	if options.AbsPath {
+		finalFiles, err = utils.ConvertToAbsolutePaths(finalFiles) // Call utils function
+		if err != nil {
+			return nil, fmt.Errorf("error converting to absolute paths: %v", err)
+		}
 	}
 
 	return finalFiles, nil
