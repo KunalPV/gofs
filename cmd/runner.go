@@ -28,6 +28,7 @@ func executeSearch(cmd *cobra.Command, args []string) error {
 	fileType, _ := cmd.Flags().GetBool("file-type")
 	extension, _ := cmd.Flags().GetBool("extension")
 	caseSensitive, _ := cmd.Flags().GetBool("case-sensitive")
+	abspath, _ := cmd.Flags().GetBool("abs-path")
 
 	// Validate conflicting flags
 	if regexFlag && globFlag {
@@ -44,6 +45,7 @@ func executeSearch(cmd *cobra.Command, args []string) error {
 		ExcludePatterns: excludePatterns,
 		FileType:        fileType,
 		Extension:       extension,
+		AbsPath:         abspath,
 	}
 
 	// Handle `gofs .`: List all files and directories recursively

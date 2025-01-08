@@ -16,6 +16,7 @@ func defineFlags() {
 	rootCmd.Flags().BoolP("file-type", "t", false, "Filter results by file type (e.g., file, dir, symlink)")
 	rootCmd.Flags().BoolP("extension", "e", false, "Filter results by file extension")
 	rootCmd.Flags().BoolP("case-sensitive", "S", false, "Enable case-sensitive search")
+	rootCmd.Flags().BoolP("abs-path", "A", false, "Show absolute paths in the results")
 
 	rootCmd.SilenceUsage = true
 	rootCmd.SilenceErrors = true
