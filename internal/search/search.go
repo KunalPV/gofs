@@ -17,93 +17,53 @@ type FilterOptions struct {
 
 // Search finds files matching a pattern (glob, regex, or substring) in the specified directory.
 func Search(pattern, path string, depth int, options FilterOptions) ([]string, error) {
-	var results []string
-	var err error
-
 	// Get all files from the directory
 	files, err := Traverse(path, depth)
 	if err != nil {
-		fmt.Printf("Error traversing files: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("error traversing files: %v", err)
 	}
 
-	if options.RegexPattern {
-		// Perform regex search
-		results, err := RegexFilter(files, pattern) // Filter using glob
-		if err != nil {
-			fmt.Printf("Error filtering files: %v\n", err)
-			return nil, err
-		}
-		results, err = ExcludePattern(results, options.ExcludePatterns) // Exclude files
-		if err != nil {
-			fmt.Printf("Error removing files: %v\n", err)
-			return nil, err
-		}
-		return results, nil
-	} else if options.GlobPattern {
-		// Perform glob search
-		results, err = GlobFilter(files, pattern) // Filter using regex
-		if err != nil {
-			fmt.Printf("Error filtering files: %v\n", err)
-			return nil, err
-		}
-		results, err = ExcludePattern(results, options.ExcludePatterns) // Exclude files
-		if err != nil {
-			fmt.Printf("Error removing files: %v\n", err)
-			return nil, err
-		}
-		return results, nil
-	} else if options.CaseSensitive {
-		// Perform case-sensitive search
-		results, err = FilterByCaseSensitivity(files, pattern) // Filter using case sensitivity
-		if err != nil {
-			fmt.Printf("Error filtering files: %v\n", err)
-			return nil, err
-		}
-		results, err = ExcludePattern(results, options.ExcludePatterns) // Exclude files
-		if err != nil {
-			fmt.Printf("Error removing files: %v\n", err)
-			return nil, err
-		}
-		return results, nil
-	} else if options.FileType {
-		// Perform file type search
-		results, err = FilterByType(files, pattern) // Filter by file type
-		if err != nil {
-			fmt.Printf("Error filtering files: %v\n", err)
-			return nil, err
-		}
-		results, err = ExcludePattern(results, options.ExcludePatterns) // Exclude files
-		if err != nil {
-			fmt.Printf("Error removing files: %v\n", err)
-			return nil, err
-		}
-		return results, nil
-	} else if options.Extension {
-		// Perform file extension search
-		results, err = FilterByExtension(files, pattern) // Filter by file extension
-		if err != nil {
-			fmt.Printf("Error filtering files: %v\n", err)
-			return nil, err
-		}
-		results, err = ExcludePattern(results, options.ExcludePatterns) // Exclude files
-		if err != nil {
-			fmt.Printf("Error removing files: %v\n", err)
-			return nil, err
-		}
-		return results, nil
-	} else {
-		// Perform normal pattern search
-		for _, file := range files {
-			if strings.Contains(file, pattern) || strings.Contains(filepath.Base(file), pattern) {
-				results = append(results, file)
-			}
-		}
-		results, err = ExcludePattern(results, options.ExcludePatterns) // Exclude files
-		if err != nil {
-			fmt.Printf("Error removing files: %v\n", err)
-			return nil, err
-		}
-		return results, nil
+	// Filter files based on the provided options
+	filteredFiles, err := applyFilters(files, pattern, options)
+	if err != nil {
+		return nil, fmt.Errorf("error applying filters: %v", err)
 	}
+
+	// Exclude files based on exclude patterns
+	finalFiles, err := ExcludePattern(filteredFiles, options.ExcludePatterns)
+	if err != nil {
+		return nil, fmt.Errorf("error excluding files: %v", err)
+	}
+
+	return finalFiles, nil
+}
+
+// applyFilters applies the necessary filtering logic based on the FilterOptions.
+func applyFilters(files []string, pattern string, options FilterOptions) ([]string, error) {
+	switch {
+	case options.RegexPattern:
+		return RegexFilter(files, pattern)
+	case options.GlobPattern:
+		return GlobFilter(files, pattern)
+	case options.CaseSensitive:
+		return FilterByCaseSensitivity(files, pattern)
+	case options.FileType:
+		return FilterByType(files, pattern)
+	case options.Extension:
+		return FilterByExtension(files, pattern)
+	default:
+		// Default to normal substring search
+		return filterBySubstring(files, pattern), nil
+	}
+}
+
+// filterBySubstring performs a simple substring search on the files.
+func filterBySubstring(files []string, pattern string) []string {
+	var results []string
+	for _, file := range files {
+		if strings.Contains(file, pattern) || strings.Contains(filepath.Base(file), pattern) {
+			results = append(results, file)
+		}
+	}
+	return results
 }
