@@ -2,21 +2,28 @@ package cmd
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/spf13/cobra"
 )
 
 func defineFlags() {
 	rootCmd.PersistentFlags().StringP("pathname", "p", ".", "Pathname to search (default: current directory)")
+
 	rootCmd.Flags().BoolP("version", "v", false, "Display the version of the utility")
+
 	rootCmd.Flags().BoolP("regex", "r", false, "Use regex pattern for searching")
 	rootCmd.Flags().BoolP("glob", "g", false, "Use glob pattern for searching")
+
 	rootCmd.Flags().IntP("max-depth", "d", -1, "Limit the depth of directory traversal (-1 for unlimited depth)")
 	rootCmd.Flags().StringSliceP("exclude", "x", []string{}, "Exclude files or directories matching a glob pattern")
+
 	rootCmd.Flags().BoolP("file-type", "t", false, "Filter results by file type (e.g., file, dir, symlink)")
 	rootCmd.Flags().BoolP("extension", "e", false, "Filter results by file extension")
 	rootCmd.Flags().BoolP("case-sensitive", "S", false, "Enable case-sensitive search")
 	rootCmd.Flags().BoolP("abs-path", "A", false, "Show absolute paths in the results")
+
+	rootCmd.Flags().IntP("threads", "T", runtime.NumCPU(), "Set the number of threads for parallel execution (default: number of CPU cores)")
 
 	rootCmd.SilenceUsage = true
 	rootCmd.SilenceErrors = true

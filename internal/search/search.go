@@ -18,12 +18,7 @@ type FilterOptions struct {
 }
 
 // Search finds files matching a pattern (glob, regex, or substring) in the specified directory.
-func Search(pattern, path string, depth int, options FilterOptions) ([]string, error) {
-	// Get all files from the directory
-	files, err := Traverse(path, depth)
-	if err != nil {
-		return nil, fmt.Errorf("error traversing files: %v", err)
-	}
+func Search(pattern, path string, files []string, options FilterOptions) ([]string, error) {
 
 	// Filter files based on the provided options
 	filteredFiles, err := applyFilters(files, pattern, options)
