@@ -2,8 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"gofs/internal/parallel"
 	"gofs/internal/search"
+	"gofs/utils"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -17,6 +20,13 @@ func executeSearch(cmd *cobra.Command, args []string) error {
 	if versionFlag {
 		fmt.Printf("gofs version %s\n", version)
 		os.Exit(0) // Exit early to prevent further execution
+	}
+
+	// Retrieve and validate thread count
+	threadFlag, _ := cmd.Flags().GetInt("threads")
+	maxThreads, err := utils.GetValidatedThreads(threadFlag)
+	if err != nil {
+		return fmt.Errorf("error: %v", err)
 	}
 
 	// Retrieve flags
@@ -50,7 +60,7 @@ func executeSearch(cmd *cobra.Command, args []string) error {
 
 	// Handle `gofs .`: List all files and directories recursively
 	if len(args) == 1 && args[0] == "." {
-		results, err := search.Traverse(path, depth)
+		results, err := search.Traverse(path, depth, maxThreads)
 		if err != nil {
 			return fmt.Errorf("error listing files: %v", err)
 		}
@@ -69,12 +79,40 @@ func executeSearch(cmd *cobra.Command, args []string) error {
 		path = args[1]
 	}
 
-	// Perform the search
-	results, err := search.Search(pattern, path, depth, options)
+	// Perform traversal and search
+	allFiles, err := search.Traverse(path, depth, maxThreads)
+	if err != nil {
+		return fmt.Errorf("error during traversal: %v", err)
+	}
+
+	// Perform parallel search
+	results, err := parallel.ExecuteWithThreads(
+		func() ([]string, error) { return allFiles, nil }, // Task to provide files for search
+		func(file string) (string, error) { // Task to process each file
+			matches, err := search.Search(pattern, path, []string{file}, options)
+			if err != nil {
+				return "", err
+			}
+			return strings.Join(matches, "\n"), nil
+		},
+		maxThreads,
+	)
+
 	if err != nil {
 		return fmt.Errorf("search failed: %v", err)
 	}
 
-	printResults(results)
+	// Remove duplicates from results
+	uniqueResults := make(map[string]struct{})
+	for _, result := range results {
+		uniqueResults[result] = struct{}{}
+	}
+
+	finalResults := []string{}
+	for result := range uniqueResults {
+		finalResults = append(finalResults, result)
+	}
+
+	printResults(finalResults)
 	return nil
 }

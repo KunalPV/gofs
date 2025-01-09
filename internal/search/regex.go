@@ -35,6 +35,7 @@ func GlobFilter(files []string, pattern string) ([]string, error) {
 	results := make([]string, 0, len(files))
 	for _, file := range files {
 		matched, err := filepath.Match(pattern, filepath.Base(file))
+
 		if err != nil {
 			return nil, fmt.Errorf("error matching file '%s' with pattern '%s': %v", file, pattern, err)
 		}
