@@ -24,7 +24,7 @@ func ValidateCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	// Step 3: Validate pathname is not mistakenly provided in pattern
-	if len(args) == 1 && strings.HasSuffix(pattern, "/") {
+	if len(args) == 1 && strings.Contains(pattern, "/") {
 		return errors.New("pathname has been provided in the pattern parameter")
 	}
 
