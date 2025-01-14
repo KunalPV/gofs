@@ -1,8 +1,6 @@
 package main
 
-import (
-	"gofs/cmd"
-)
+import "gofs/cmd"
 
 func main() {
 	cmd.Execute()
