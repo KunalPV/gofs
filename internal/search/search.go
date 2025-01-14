@@ -2,6 +2,7 @@ package search
 
 import (
 	"fmt"
+	"gofs/utils"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,6 +21,8 @@ func SearchWithThreads(pattern string, traversalResults []string, validThreads i
 		if err != nil {
 			return nil, fmt.Errorf("invalid regex pattern: %v", err)
 		}
+	} else if !utils.IsValidGlob(pattern) {
+		return nil, fmt.Errorf("invalid glob pattern: %s", pattern)
 	}
 
 	// Channels for parallel processing
@@ -43,50 +46,7 @@ func SearchWithThreads(pattern string, traversalResults []string, validThreads i
 		go func() {
 			defer wg.Done()
 			for file := range workChan {
-				var matched bool
-				var err error
-
-				// Check if it's a directory
-				if stat, statErr := os.Stat(file); statErr == nil && stat.IsDir() {
-					if isGlob {
-						// Match the directory name using the glob pattern
-						matched, err = filepath.Match(pattern, filepath.Base(file))
-						if err != nil {
-							select {
-							case errChan <- fmt.Errorf("error matching directory with glob pattern: %v", err):
-							default:
-							}
-							continue
-						}
-					} else {
-						// Match the directory name using the regex
-						matched = re.MatchString(filepath.Base(file))
-					}
-
-					if matched {
-						// Add the directory to results with a trailing slash
-						resultsChan <- file
-						continue
-					}
-				}
-
-				// Match files
-				if isGlob {
-					// Match the file name using the glob pattern
-					matched, err = filepath.Match(pattern, filepath.Base(file))
-					if err != nil {
-						select {
-						case errChan <- fmt.Errorf("error matching glob pattern: %v", err):
-						default:
-						}
-						continue
-					}
-				} else {
-					// Match the file name using the regex
-					matched = re.MatchString(file) || re.MatchString(filepath.Base(file))
-				}
-
-				if matched {
+				if matchFileOrDir(file, pattern, re, isGlob) {
 					resultsChan <- file
 				}
 			}
@@ -117,4 +77,28 @@ func SearchWithThreads(pattern string, traversalResults []string, validThreads i
 	}
 
 	return results, nil
+}
+
+// matchFileOrDir checks if a file or directory matches the pattern.
+func matchFileOrDir(file string, pattern string, re *regexp.Regexp, isGlob bool) bool {
+
+	if stat, err := os.Stat(file); err == nil {
+		if stat.IsDir() {
+			// Match directory name
+			if isGlob {
+				matched, _ := filepath.Match(pattern, filepath.Base(file))
+				return matched
+			}
+			return re.MatchString(filepath.Base(file))
+		}
+
+		// Match file name
+		if isGlob {
+			matched, _ := filepath.Match(pattern, filepath.Base(file))
+			return matched
+		} else {
+			return re.MatchString(file) || re.MatchString(filepath.Base(file))
+		}
+	}
+	return false
 }

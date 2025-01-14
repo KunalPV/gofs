@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"gofs/internal/cli"
+	"gofs/internal/filter"
 	"gofs/internal/search"
 	"gofs/internal/traverse"
 	"gofs/utils"
@@ -12,7 +13,7 @@ import (
 
 // Root command for the CLI
 var rootCmd = &cobra.Command{
-	Use:     "gofs [Flag] <pattern> [pathname]",
+	Use:     "gofs <pattern> [pathname]",
 	Short:   "gofs is a lightweight CLI tool for searching files.",
 	Long:    `A program to find files and directories in your filesystem.`,
 	PreRunE: cli.PrioritizeHelpAndVersion,
@@ -43,6 +44,14 @@ var rootCmd = &cobra.Command{
 		searchResults, err = search.SearchPattern(effectivePattern, traversalResults, config.MaxThreads, config.GlobPattern != "")
 		if err != nil {
 			return fmt.Errorf("error during search: %v", err)
+		}
+
+		// Step 6: Apply filters if any active FilterOptions are provided
+		if utils.HasActiveFilters(config.FilterOptions) {
+			searchResults, err = filter.FilterResults(searchResults, config.FilterOptions)
+			if err != nil {
+				return fmt.Errorf("error during filtering: %v", err)
+			}
 		}
 
 		// Step x: Print the results

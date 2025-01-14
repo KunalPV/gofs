@@ -16,7 +16,7 @@ func HandlePattern(pattern string, globPattern string) (string, error) {
 	// Case 2: Handle glob pattern
 	if globPattern != "" {
 		// Validate the glob pattern
-		if !isValidGlob(globPattern) {
+		if !IsValidGlob(globPattern) {
 			return "", fmt.Errorf("invalid glob pattern: %s", globPattern)
 		}
 		// Return the globPattern as the effective pattern
@@ -34,7 +34,7 @@ func HandlePattern(pattern string, globPattern string) (string, error) {
 }
 
 // isValidGlob validates a glob pattern for correctness.
-func isValidGlob(pattern string) bool {
+func IsValidGlob(pattern string) bool {
 	// Minimal validation for glob patterns
 	if pattern == "" {
 		return false

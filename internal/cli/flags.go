@@ -68,15 +68,15 @@ func ParseFlags(cmd *cobra.Command, args []string) Config {
 	includeIgnore, _ := cmd.Flags().GetBool("ignore")
 	extension, _ := cmd.Flags().GetString("extension")
 	fileType, _ := cmd.Flags().GetString("file-type")
-	excludePattern, _ := cmd.Flags().GetString("exclude")
+	exclude, _ := cmd.Flags().GetString("exclude")
 	absolutePath, _ := cmd.Flags().GetBool("absolute-path")
 
 	// Construct FilterOptions as a map
 	filterOptions := map[string]interface{}{
-		"Extension":      extension,
-		"FileType":       fileType,
-		"ExcludePattern": excludePattern,
-		"AbsolutePath":   absolutePath,
+		"Extension": extension,
+		"FileType":  fileType,
+		"Exclude":   exclude,
+		"AbsPath":   absolutePath,
 	}
 
 	return Config{
