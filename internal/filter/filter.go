@@ -30,10 +30,6 @@ func FilterResults(searchResults []string, filterOptions map[string]interface{})
 					return nil, fmt.Errorf("error applying exclude filter: %v", err)
 				}
 			}
-		case "AbsPath":
-			if absPath, ok := value.(bool); ok && absPath {
-				filteredResults = filters.AbsPathFilter(filteredResults)
-			}
 		}
 	}
 
