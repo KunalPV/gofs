@@ -18,6 +18,7 @@ type Config struct {
 	IncludeIgnore bool
 	GlobPattern   string
 	FilterOptions map[string]interface{} // Holds filter-related options
+	FormatOptions map[string]interface{} // Holds format-related options
 }
 
 // DefineFlags adds flags to the root command
@@ -40,7 +41,11 @@ func DefineFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("extension", "e", "", "Filter results by file extensions")
 	cmd.Flags().StringP("file-type", "t", "", "Filter results by file type (file, dir, symlink)")
 	cmd.Flags().StringP("exclude", "x", "", "Exclude files/directories matching a glob pattern")
-	cmd.Flags().BoolP("absolute-path", "A", false, "Return absolute paths in results")
+
+	// Format flags
+	cmd.Flags().BoolP("absolute-path", "A", false, "Display resuults as absolute paths")
+	cmd.Flags().BoolP("long-list", "l", false, "Display results in long list format")
+	cmd.Flags().BoolP("hyper-link", "L", false, "Display results as hyperlinks")
 }
 
 // ParseFlags parses the flags and returns a Config struct
@@ -70,6 +75,8 @@ func ParseFlags(cmd *cobra.Command, args []string) Config {
 	fileType, _ := cmd.Flags().GetString("file-type")
 	exclude, _ := cmd.Flags().GetString("exclude")
 	absolutePath, _ := cmd.Flags().GetBool("absolute-path")
+	longList, _ := cmd.Flags().GetBool("long-list")
+	hyperlink, _ := cmd.Flags().GetBool("hyper-link")
 
 	// Construct FilterOptions as a map
 	filterOptions := map[string]interface{}{
@@ -77,6 +84,12 @@ func ParseFlags(cmd *cobra.Command, args []string) Config {
 		"FileType":  fileType,
 		"Exclude":   exclude,
 		"AbsPath":   absolutePath,
+	}
+
+	formatOptions := map[string]interface{}{
+		"AbsolutePath": absolutePath,
+		"LongList":     longList,
+		"Hyperlink":    hyperlink,
 	}
 
 	return Config{
@@ -90,6 +103,7 @@ func ParseFlags(cmd *cobra.Command, args []string) Config {
 		IncludeIgnore: includeIgnore,
 		GlobPattern:   globPattern,
 		FilterOptions: filterOptions,
+		FormatOptions: formatOptions,
 	}
 }
 

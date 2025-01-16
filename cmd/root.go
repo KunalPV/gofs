@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gofs/internal/cli"
 	"gofs/internal/filter"
+	"gofs/internal/output"
 	"gofs/internal/search"
 	"gofs/internal/traverse"
 	"gofs/utils"
@@ -51,6 +52,14 @@ var rootCmd = &cobra.Command{
 			searchResults, err = filter.FilterResults(searchResults, config.FilterOptions)
 			if err != nil {
 				return fmt.Errorf("error during filtering: %v", err)
+			}
+		}
+
+		// Step 7: Format the search results based on the FormatOptions
+		if utils.HasActiveFormats(config.FormatOptions) {
+			searchResults = output.FormatResults(searchResults, config.FormatOptions)
+			if err != nil {
+				return fmt.Errorf("error during formatting: %v", err)
 			}
 		}
 
