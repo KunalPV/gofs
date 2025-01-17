@@ -13,18 +13,6 @@ import (
 // Streams files and directories to a results channel for further processing.
 func TraverseAndStream(ctx context.Context, root string, depth int, results chan<- string, maxThreads int, hidden bool, ignore bool) error {
 
-	// // Validate depth
-	// validDepth, err := utils.ValidateDepth(depth)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// // Validate maxThreads
-	// validThreads, err := utils.ValidateMaxThreads(maxThreads)
-	// if err != nil {
-	// 	return err
-	// }
-
 	var wg sync.WaitGroup
 	workChan := make(chan string, maxThreads)
 	errChan := make(chan error, 1)

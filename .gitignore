@@ -27,6 +27,7 @@ go.work.sum
 # Test Data
 /testdata/*
 gofs-test/
+/tests/*
 
 # Build file
 gofs

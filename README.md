@@ -32,13 +32,24 @@ Display Help:
 Output:
 
 ```yaml
-Usage: gofs [options] <pattern> [pathname]
+Usage:
+  gofs <pattern> [pathname] [flags]
 
-Options: -h, --help       Show help message
-  -v, --version    Show version of the utility
-
-Positional Arguments: <pattern>       Pattern to search for (required)
-  [pathname]      Directory to search (optional)
+Flags:
+  -A, --absolute-path      Display resuults as absolute paths
+  -S, --case-sensitive     Perform case-sensitive searches
+  -x, --exclude string     Exclude files/directories matching a glob pattern
+  -e, --extension string   Filter results by file extensions
+  -t, --file-type string   Filter results by file type (file, dir, symlink)
+  -g, --glob string        Search using a glob pattern (default: empty string)
+  -h, --help               Display help for gofs
+  -H, --hidden             Include hidden files in the search
+  -L, --hyper-link         Display results as hyperlinks
+  -I, --ignore             Include .*ignore files like .gitignore
+  -l, --long-list          Display results in long list format
+  -d, --max-depth int      Limit search to a specific directory depth (-1 for no limit) (default -1)
+  -T, --max-threads int    Set the maximum number of parallel threads for traversal (default 8)
+  -v, --version            Display the version of gofs
 ```
 
 Display Version:
@@ -127,6 +138,18 @@ dir2/nested-dir/data.json
 
 ### Advanced Features
 
+Search using regex pattern
+
+```bash
+gofs '.*\.json$'
+```
+
+Output
+
+```yaml
+dir2/nested-dir/data.json
+```
+
 Search using glob pattern
 
 ```bash
@@ -150,18 +173,6 @@ Output
 
 ```yaml
 dir1/config.txt
-```
-
-Search using regex pattern
-
-```bash
-gofs -r '.*\.json$'
-```
-
-Output
-
-```yaml
-dir2/nested-dir/data.json
 ```
 
 Limit the depth of directory traversal
@@ -209,9 +220,3 @@ No files found.
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](#License "Goto License") file for details.
-
-## Future Plans
-
-- Implement parallel execution for faster searches.
-- Add more output formats (e.g., JSON).
-- Introduce fuzzy search capabilities.
