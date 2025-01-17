@@ -31,3 +31,6 @@ tests/
 
 # Build file
 gofs
+
+# Other
+.DS_Store
